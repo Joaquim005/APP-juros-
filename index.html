@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Magalhães Calculadora Flutuante | Juros + Saques Semanais/Diários</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            overflow-x: auto;
+            font-family: 'Segoe UI', 'Poppins', 'Orbitron', monospace;
+            background: radial-gradient(circle at 20% 30%, #0a0f2a, #030617);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Top Bar: Relógio + Nome Magalhães */
+        .top-bar {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 20px;
+            border-radius: 60px;
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .digital-clock {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.7rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #0ff;
+            text-shadow: 0 0 8px cyan, 0 0 15px #00aaff;
+        }
+        .magalhaes-brand {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ffaa44, #ff44cc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-left: 2px solid cyan;
+            padding-left: 15px;
+            letter-spacing: 1px;
+        }
+        @media (max-width: 680px) {
+            .top-bar { right: 12px; top: 12px; padding: 5px 14px; gap: 10px; }
+            .digital-clock { font-size: 1.1rem; }
+            .magalhaes-brand { font-size: 0.8rem; padding-left: 8px; }
+        }
+
+        /* Container Principal */
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 30px;
+            padding: 100px 25px 40px 25px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Cartões flutuantes */
+        .card {
+            background: rgba(20, 25, 55, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 42px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s ease;
+            width: 460px;
+            padding: 22px;
+        }
+        .card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(0, 255, 255, 0.5);
+        }
+        h2 {
+            text-align: center;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 1.7rem;
+            background: linear-gradient(135deg, #fff, #0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Calculadora Normal */
+        .calc-screen {
+            background: #000000aa;
+            border-radius: 28px;
+            padding: 18px;
+            margin-bottom: 20px;
+            text-align: right;
+            font-size: 2.4rem;
+            font-family: 'Orbitron', monospace;
+            font-weight: 500;
+            min-height: 85px;
+            word-break: break-all;
+            border: 1px solid rgba(0,255,255,0.3);
+        }
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            background: rgba(15, 20, 45, 0.9);
+            border: none;
+            padding: 14px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 28px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: monospace;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        button:active { transform: scale(0.94); background: #2a3f8e; }
+        .operator { background: #ff9500cc; }
+        .equal { background: #00b4d8cc; }
+        .clear { background: #d9534fcc; }
+        .percent-btn { background: #2c6e9ecc; }
+
+        /* Juros Compostos */
+        .compound-group {
+            margin: 12px 0;
+        }
+        .compound-group label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            color: #bbddff;
+        }
+        .compound-group input, .compound-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 28px;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            border: 1px solid rgba(0,255,200,0.3);
+        }
+        .compound-group input:focus, .compound-group select:focus {
+            border-color: cyan;
+            box-shadow: 0 0 8px cyan;
+        }
+        .currency-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .currency-row select { width: 40%; }
+        .withdraw-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .withdraw-row select, .withdraw-row input {
+            flex: 1;
+            min-width: 80px;
+        }
+        .result-compound {
+            background: #00000099;
+            padding: 12px;
+            border-radius: 28px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        .juros-vermelho {
+            color: #ff6666;
+            text-shadow: 0 0 3px red;
+        }
+        .lucro-amarelo {
+            color: #ffcc44;
+            text-shadow: 0 0 3px gold;
+        }
+        .btn-calc {
+            background: linear-gradient(95deg, #0f2b5e, #0a4c6e);
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+        }
+        .daily-table-wrapper {
+            max-height: 340px;
+            overflow-y: auto;
+            margin-top: 18px;
+            border-radius: 24px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px;
+        }
+        .daily-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+        .daily-table th, .daily-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid rgba(0,255,255,0.2);
+        }
+        .daily-table th { color: cyan; position: sticky; top: 0; background: #0a0f2a; }
+        .daily-table .juros-cell { color: #ff8888; font-weight: bold; }
+        .daily-table .lucro-cell { color: #ffcc44; font-weight: bold; }
+        .daily-table .saque-cell { color: #ffaa66; font-weight: bold; }
+
+        /* Canvas 3D */
+        .canvas-3d-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        canvas#bgCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        @media (max-width: 1000px) {
+            .main-container { flex-direction: column; align-items: center; padding-top: 90px; }
+            .card { width: 95%; max-width: 520px; }
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 20px;
+            color: #aaa;
+            position: relative;
+            z-index: 20;
+        }
+        .badge-moeda { font-weight: bold; background: #00000066; border-radius: 20px; padding: 2px 8px; display: inline-block; }
+        .saque-info { font-size: 0.7rem; color: #ffaa88; margin-top: 5px; text-align: center; }
+        .semanal-destaque { background: rgba(255,170,0,0.15); }
+    </style>
+</head>
+<body>
+
+    <!-- Topo: Relógio + Nome Magalhães -->
+    <div class="top-bar">
+        <div class="digital-clock" id="clockDisplay">00:00:00</div>
+        <div class="magalhaes-brand">✨ Magalhães Calculadora ✨</div>
+    </div>
+
+    <div class="main-container">
+        <!-- Calculadora Normal com % CORRIGIDA -->
+        <div class="card">
+            <h2>🧮 Calculadora + %</h2>
+            <div class="calc-screen" id="calcScreen">0</div>
+            <div class="calc-buttons" id="buttonsGrid"></div>
+            <div style="font-size: 0.7rem; text-align: center; margin-top: 12px;">✅ %: percentual do valor (ex: 200+10% = 220)</div>
+        </div>
+
+        <!-- Calculadora Juros Compostos com Saques -->
+        <div class="card">
+            <h2>📈 Juros + Saques</h2>
+            <div class="compound-group">
+                <label>💵 Valor Inicial</label>
+                <div class="currency-row">
+                    <input type="number" id="principal" value="1000" step="any" style="width:60%">
+                    <select id="moedaOrigem">
+                        <option value="USD">💲 USD</option>
+                        <option value="AOA">🇦🇴 Kwanza</option>
+                        <option value="BRL">🇧🇷 Real</option>
+                        <option value="MZN">🇲🇿 Metical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="compound-group">
+                <label>📈 Taxa de Juros (% ao dia)</label>
+                <input type="number" id="rate" value="0.5" step="any">
+            </div>
+            <div class="compound-group">
+                <label>⏱️ Número de Dias (máx 90)</label>
+                <input type="number" id="periodDays" value="30" min="1" max="90" step="1">
+            </div>
+            
+            <!-- Configuração de Saque -->
+            <div class="compound-group">
+                <label>🏧 Configurar Saque Periódico</label>
+                <div class="withdraw-row">
+                    <select id="saqueTipo">
+                        <option value="nenhum">Sem saque</option>
+                        <option value="diario">Saque Diário</option>
+                        <option value="semanal">Saque Semanal (a cada 7 dias)</option>
+                    </select>
+                    <input type="number" id="saqueValor" placeholder="Valor" value="10" step="any">
+                </div>
+                <div class="saque-info">💡 Saques ocorrem ANTES dos juros no dia. Saque semanal apenas nos dias 7,14,21,28...</div>
+            </div>
+
+            <div class="result-compound" id="compoundResult">
+                <span>💰 Saldo Final: --</span><br>
+                <span class="juros-vermelho">📉 Juros Totais Acumulados: --</span><br>
+                <span class="lucro-amarelo">📈 Lucro Líquido: --</span><br>
+                <span>🏧 Saques totais realizados: --</span>
+            </div>
+            <button class="btn-calc" id="calcCompoundBtn">📊 Calcular & Exibir Tabela Diária</button>
+            
+            <div class="daily-table-wrapper" id="dailyTableWrapper" style="display: none;">
+                <table class="daily-table" id="dailyTable">
+                    <thead>
+                        <tr>
+                            <th>Dia</th>
+                            <th>Saldo Inicial</th>
+                            <th>Juros (🔴)</th>
+                            <th>Saldo Final</th>
+                            <th>Lucro Acum.(🟡)</th>
+                            <th>Saque (💸)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="canvas-3d-wrapper">
+        <canvas id="bgCanvas"></canvas>
+    </div>
+    <footer>✨ Magalhães Calculadora Flutuante | Juros Diários com Saques (Diário/Semanal) | 4 Moedas | 3D Interativo</footer>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        // ---------- CENA 3D FLUTUANTE ----------
+        const canvas3d = document.getElementById('bgCanvas');
+        const scene = new THREE.Scene();
+        scene.background = null;
+        scene.fog = new THREE.FogExp2(0x030617, 0.008);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 12);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+
+        const ambientLight = new THREE.AmbientLight(0x222222);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(2, 5, 3);
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x2266ff, 0.5);
+        backLight.position.set(-2, 1, -4);
+        scene.add(backLight);
+        
+        const group = new THREE.Group();
+        const knotGeo = new THREE.TorusKnotGeometry(1.2, 0.28, 200, 32, 3, 4);
+        const knotMat = new THREE.MeshStandardMaterial({ color: 0x3a86ff, emissive: 0x0a2a6a, metalness: 0.7 });
+        const knot = new THREE.Mesh(knotGeo, knotMat);
+        group.add(knot);
+        
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 32), new THREE.MeshPhongMaterial({ color: 0x00ccff, emissive: 0x004466, transparent: true, opacity: 0.35 }));
+        group.add(innerSphere);
+        
+        const satellites = [];
+        for (let i = 0; i < 12; i++) {
+            const sat = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), new THREE.MeshStandardMaterial({ color: [0xff44aa,0x44ffaa,0xffaa44][i%3], emissive: 0x331166 }));
+            sat.userData = { angle: (i/12)*Math.PI*2, radius: 1.9, speed: 0.008 + Math.random()*0.005 };
+            group.add(sat);
+            satellites.push(sat);
+        }
+        
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlePos = [];
+        for (let i=0;i<800;i++) {
+            const theta = Math.random()*Math.PI*2;
+            const phi = Math.acos(2*Math.random()-1);
+            const r = 2.2+Math.random()*1.2;
+            particlePos.push(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.8, r*Math.cos(phi));
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particlePos), 3));
+        const particles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ color: 0x66ccff, size: 0.045, blending: THREE.AdditiveBlending }));
+        group.add(particles);
+        
+        const ringGeo = new THREE.TorusGeometry(1.5, 0.03, 64, 200);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0x0ff, emissive: 0x0a8cff });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI/2;
+        group.add(ring);
+        scene.add(group);
+        
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0;i<1200;i++) { starPos.push((Math.random()-0.5)*200, (Math.random()-0.5)*100, (Math.random()-0.5)*80-40); }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.6 }));
+        scene.add(stars);
+        
+        let time3d = 0;
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            time3d += 0.012;
+            group.rotation.y = time3d * 0.3;
+            group.rotation.x = Math.sin(time3d*0.2)*0.2;
+            satellites.forEach(sat => {
+                if(sat.userData) {
+                    sat.userData.angle += sat.userData.speed;
+                    const x = Math.cos(sat.userData.angle)*sat.userData.radius;
+                    const z = Math.sin(sat.userData.angle)*sat.userData.radius;
+                    sat.position.set(x, Math.sin(sat.userData.angle*2.5)*0.45, z);
+                    sat.rotation.x += 0.03;
+                }
+            });
+            particles.rotation.y += 0.002;
+            ring.material.emissiveIntensity = 0.4+Math.sin(time3d*3)*0.2;
+            knot.material.emissiveIntensity = 0.25+Math.sin(time3d*2)*0.1;
+            stars.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate3D();
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // ---------- RELÓGIO ----------
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clockDisplay').innerText = now.toLocaleTimeString('pt-BR');
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // ---------- CALCULADORA NORMAL (CORRIGIDA) ----------
+        const buttonsDef = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+','C','←','%'];
+        const buttonsContainer = document.getElementById('buttonsGrid');
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+        let resetScreen = false;
+        const calcScreenDiv = document.getElementById('calcScreen');
+        
+        function updateScreen(value) {
+            let displayVal = value.length > 16 ? parseFloat(value).toExponential(12) : value;
+            calcScreenDiv.innerText = displayVal;
+        }
+        
+        function handleNumber(num) {
+            if (resetScreen) {
+                currentInput = num;
+                resetScreen = false;
+            } else {
+                if (currentInput === '0' && num !== '.') currentInput = num;
+                else currentInput += num;
+            }
+            updateScreen(currentInput);
+        }
+        
+        function handleOperator(op) {
+            if (operation !== null && !resetScreen) calculate();
+            previousInput = currentInput;
+            operation = op;
+            resetScreen = true;
+        }
+        
+        function calculate() {
+            if (operation === null || resetScreen) return;
+            let result;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+            if (isNaN(prev) || isNaN(curr)) return;
+            switch(operation) {
+                case '+': result = prev + curr; break;
+                case '-': result = prev - curr; break;
+                case '*': result = prev * curr; break;
+                case '/': result = curr === 0 ? 'Erro' : prev / curr; break;
+                default: return;
+            }
+            if(result === 'Erro') { currentInput = 'Erro'; updateScreen('Erro'); operation=null; resetScreen=true; return; }
+            currentInput = result.toString();
+            updateScreen(currentInput);
+            operation = null;
+            previousInput = '';
+            resetScreen = true;
+        }
+        
+        function percentOperation() {
+            if (operation === null || resetScreen) {
+                let val = parseFloat(currentInput);
+                if (!isNaN(val)) {
+                    currentInput = (val / 100).toString();
+                    updateScreen(currentInput);
+                    resetScreen = false;
+                }
+                return;
+            }
+            let base = parseFloat(previousInput);
+            let percValue = parseFloat(currentInput);
+            if (isNaN(base) || isNaN(percValue)) return;
+            let result;
+            switch(operation) {
+                case '+': result = base + (base * percValue / 100); break;
+                case '-': result = base - (base * percValue / 100); break;
+                case '*': result = base * (percValue / 100); break;
+                case '/': result = percValue !== 0 ? base / (percValue / 100) : 'Erro'; break;
+                default: return;
+            }
+            if(result === 'Erro') { currentInput = 'Erro'; updateScreen('Erro'); operation=null; resetScreen=true; return; }
+            currentInput = result.toString();
+            updateScreen(currentInput);
+            operation = null;
+            previousInput = '';
+            resetScreen = true;
+        }
+        
+        function clearAll() { currentInput='0'; previousInput=''; operation=null; resetScreen=false; updateScreen('0'); }
+        function backspace() {
+            if(resetScreen) { clearAll(); return; }
+            if(currentInput.length === 1 || currentInput === '0') currentInput='0';
+            else currentInput = currentInput.slice(0,-1);
+            if(currentInput === '') currentInput='0';
+            updateScreen(currentInput);
+        }
+        function handleDecimal() {
+            if(resetScreen) { currentInput='0.'; resetScreen=false; updateScreen(currentInput); return; }
+            if(!currentInput.includes('.')) currentInput+='.';
+            updateScreen(currentInput);
+        }
+        
+        buttonsDef.forEach(btn => {
+            const el = document.createElement('button');
+            el.innerText = btn;
+            if(btn === '=') el.classList.add('equal');
+            else if(btn === 'C') el.classList.add('clear');
+            else if(btn === '%') el.classList.add('percent-btn');
+            else if(['+','-','*','/'].includes(btn)) el.classList.add('operator');
+            el.addEventListener('click', () => {
+                if(!isNaN(btn) || btn === '.') {
+                    if(btn === '.') handleDecimal();
+                    else handleNumber(btn);
+                } else if(btn === '=') calculate();
+                else if(btn === 'C') clearAll();
+                else if(btn === '←') backspace();
+                else if(btn === '%') percentOperation();
+                else handleOperator(btn);
+            });
+            buttonsContainer.appendChild(el);
+        });
+        updateScreen('0');
+        
+        // ---------- JUROS COMPOSTOS COM SAQUES - TOTALMENTE FUNCIONAL ----------
+        const principalInput = document.getElementById('principal');
+        const rateInput = document.getElementById('rate');
+        const periodDaysInput = document.getElementById('periodDays');
+        const moedaSelect = document.getElementById('moedaOrigem');
+        const saqueTipoSelect = document.getElementById('saqueTipo');
+        const saqueValorInput = document.getElementById('saqueValor');
+        const compoundResultDiv = document.getElementById('compoundResult');
+        const calcCompoundBtn = document.getElementById('calcCompoundBtn');
+        const dailyTableWrapper = document.getElementById('dailyTableWrapper');
+        const dailyTableBody = document.getElementById('dailyTableBody');
+        
+        const moedaSimbolo = { USD: { simbolo: '$', nome: 'USD' }, AOA: { simbolo: 'Kz', nome: 'AOA' }, BRL: { simbolo: 'R$', nome: 'BRL' }, MZN: { simbolo: 'MT', nome: 'MZN' } };
+        function formatMoney(value, moedaKey) { return `${moedaSimbolo[moedaKey].simbolo} ${value.toFixed(2)}`; }
+        
+        function calcularComSaques() {
+            // Obter valores
+            let P = parseFloat(principalInput.value);
+            let taxaPercent = parseFloat(rateInput.value);
+            let dias = parseInt(periodDaysInput.value, 10);
+            const moeda = moedaSelect.value;
+            const saqueTipo = saqueTipoSelect.value;
+            let saqueValor = parseFloat(saqueValorInput.value);
+            
+            // Validações
+            if (isNaN(P)) P = 0;
+            if (isNaN(taxaPercent)) taxaPercent = 0;
+            if (isNaN(dias) || dias < 1) dias = 1;
+            if (dias > 90) dias = 90;
+            if (isNaN(saqueValor)) saqueValor = 0;
+            
+            const taxaDiaria = taxaPercent / 100;
+            let saldo = P;
+            let totalSaques = 0;
+            let totalJurosAcumulados = 0;
+            const evolution = [];
+            
+            // Loop dia a dia
+            for (let d = 1; d <= dias; d++) {
+                let saldoInicioDia = saldo;
+                let saqueDia = 0;
+                
+                // Verificar se há saque neste dia
+                let temSaque = false;
+                if (saqueTipo === 'diario' && saqueValor > 0) {
+                    temSaque = true;
+                } else if (saqueTipo === 'semanal' && saqueValor > 0) {
+                    // Saque a cada 7 dias: dias 7, 14, 21, 28, 35...
+                    if (d % 7 === 0) temSaque = true;
+                }
+                
+                // Aplicar saque ANTES do juros
+                if (temSaque && saldo > 0) {
+                    if (saldo >= saqueValor) {
+                        saqueDia = saqueValor;
+                        saldo -= saqueDia;
+                        totalSaques += saqueDia;
+                    } else {
+                        // Saldo insuficiente: saca tudo
+                        saqueDia = saldo;
+                        totalSaques += saqueDia;
+                        saldo = 0;
+                    }
+                }
+                
+                // Aplicar juros sobre o saldo após saque
+                const jurosDia = saldo * taxaDiaria;
+                saldo = saldo + jurosDia;
+                totalJurosAcumulados += jurosDia;
+                
+                // Lucro acumulado = (saldo atual + total já sacado) - investimento inicial
+                const lucroAcumulado = (saldo + totalSaques) - P;
+                
+                evolution.push({
+                    dia: d,
+                    saldoInicio: saldoInicioDia,
+                    juros: jurosDia,
+                    saque: saqueDia,
+                    saldoFinal: saldo,
+                    lucroAcum: lucroAcumulado,
+                    isSaqueDay: temSaque && saqueDia > 0
+                });
+            }
+            
+            const montanteFinal = evolution.length ? evolution[evolution.length-1].saldoFinal : 0;
+            const lucroLiquido = (montanteFinal + totalSaques) - P;
+            
+            // Atualizar resultado com cores
+            compoundResultDiv.innerHTML = `
+                <span>💰 Saldo Final: ${formatMoney(montanteFinal, moeda)}</span><br>
+                <span class="juros-vermelho">📉 Juros Totais Acumulados: ${formatMoney(totalJurosAcumulados, moeda)}</span><br>
+                <span class="lucro-amarelo">📈 Lucro Líquido: ${formatMoney(lucroLiquido, moeda)}</span><br>
+                <span>🏧 Saques totais realizados: ${formatMoney(totalSaques, moeda)}</span><br>
+                <span style="font-size:0.7rem;">🧾 Taxa: ${taxaPercent}% ao dia | Dias: ${dias} | ${saqueTipo === 'nenhum' ? 'Sem saque' : (saqueTipo === 'diario' ? 'Saque Diário' : 'Saque Semanal (a cada 7 dias)')} ${saqueValor>0 ? `(${formatMoney(saqueValor, moeda)})` : ''}</span>
+            `;
+            
+            // Preencher tabela
+            if (evolution.length > 0) {
+                dailyTableWrapper.style.display = 'block';
+                dailyTableBody.innerHTML = '';
+                evolution.forEach(day => {
+                    const row = document.createElement('tr');
+                    if (day.isSaqueDay && saqueTipo === 'semanal') {
+                        row.classList.add('semanal-destaque');
+                    }
+                    row.innerHTML = `
+                        <td style="font-weight:bold;">${day.dia}</td>
+                        <td>${formatMoney(day.saldoInicio, moeda)}</td>
+                        <td class="juros-cell">${formatMoney(day.juros, moeda)}</td>
+                        <td>${formatMoney(day.saldoFinal, moeda)}</td>
+                        <td class="lucro-cell">${formatMoney(day.lucroAcum, moeda)}</td>
+                        <td class="saque-cell">${day.saque > 0 ? formatMoney(day.saque, moeda) : '-'}</td>
+                    `;
+                    dailyTableBody.appendChild(row);
+                });
+            } else {
+                dailyTableWrapper.style.display = 'none';
+            }
+        }
+        
+        // Event listeners
+        calcCompoundBtn.addEventListener('click', calcularComSaques);
+        saqueTipoSelect.addEventListener('change', calcularComSaques);
+        saqueValorInput.addEventListener('input', calcularComSaques);
+        periodDaysInput.addEventListener('input', calcularComSaques);
+        moedaSelect.addEventListener('change', calcularComSaques);
+        principalInput.addEventListener('input', calcularComSaques);
+        rateInput.addEventListener('input', calcularComSaques);
+        
+        // Executar cálculo inicial
+        calcularComSaques();
+    </script>
+</body>
+</html>
