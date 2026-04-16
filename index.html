@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Magalhães Calculadora Flutuante | Juros + Saques Semanais/Diários</title>
+    <title>Magalhães Calculadora Flutuante | Câmbio + Conversor + Juros</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* Top Bar: Relógio + Nome Magalhães */
         .top-bar {
             position: fixed;
             top: 20px;
@@ -59,7 +58,6 @@
             .magalhaes-brand { font-size: 0.8rem; padding-left: 8px; }
         }
 
-        /* Container Principal */
         .main-container {
             display: flex;
             flex-wrap: wrap;
@@ -71,7 +69,6 @@
             z-index: 10;
         }
 
-        /* Cartões flutuantes */
         .card {
             background: rgba(20, 25, 55, 0.75);
             backdrop-filter: blur(12px);
@@ -98,7 +95,6 @@
             color: transparent;
         }
 
-        /* Calculadora Normal */
         .calc-screen {
             background: #000000aa;
             border-radius: 28px;
@@ -136,7 +132,6 @@
         .clear { background: #d9534fcc; }
         .percent-btn { background: #2c6e9ecc; }
 
-        /* Juros Compostos */
         .compound-group {
             margin: 12px 0;
         }
@@ -167,17 +162,12 @@
             gap: 10px;
             align-items: center;
         }
-        .currency-row select { width: 40%; }
         .withdraw-row {
             display: flex;
             gap: 12px;
             align-items: center;
             flex-wrap: wrap;
             margin-top: 8px;
-        }
-        .withdraw-row select, .withdraw-row input {
-            flex: 1;
-            min-width: 80px;
         }
         .result-compound {
             background: #00000099;
@@ -189,14 +179,8 @@
             margin: 15px 0;
             line-height: 1.5;
         }
-        .juros-vermelho {
-            color: #ff6666;
-            text-shadow: 0 0 3px red;
-        }
-        .lucro-amarelo {
-            color: #ffcc44;
-            text-shadow: 0 0 3px gold;
-        }
+        .juros-vermelho { color: #ff6666; text-shadow: 0 0 3px red; }
+        .lucro-amarelo { color: #ffcc44; text-shadow: 0 0 3px gold; }
         .btn-calc {
             background: linear-gradient(95deg, #0f2b5e, #0a4c6e);
             width: 100%;
@@ -211,6 +195,412 @@
             background: rgba(0,0,0,0.5);
             padding: 5px;
         }
+        .daily-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+        .daily-table th, .daily-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid rgba(0,255,255,0.2);
+        }
+        .daily-table th { color: cyan; position: sticky; top: 0; background: #0a0f2a; }
+        .semanal-destaque { background: rgba(255,170,0,0.15); }
+
+        /* Câmbio com Conversor */
+        .cambio-card {
+            width: 100%;
+            max-width: 560px;
+        }
+        .cambio-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.5);
+            border-radius: 28px;
+            overflow: hidden;
+        }
+        .cambio-table th, .cambio-table td {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0,255,255,0.2);
+        }
+        .cambio-table th {
+            background: #0a1a3a;
+            color: cyan;
+        }
+        .moeda-nome {
+            font-weight: bold;
+            color: #ffcc44;
+            text-align: left;
+        }
+        .conversor-row {
+            background: rgba(0, 255, 255, 0.1);
+            border-top: 2px solid cyan;
+        }
+        .conversor-row td {
+            padding: 12px 8px;
+        }
+        .conversor-input {
+            background: #000000aa;
+            border: 1px solid cyan;
+            border-radius: 40px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 0.9rem;
+            width: 130px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .conversor-label {
+            font-size: 0.7rem;
+            color: #aaffff;
+        }
+        .resultado-conversao {
+            font-size: 0.9rem;
+            font-weight: bold;
+            background: #00000077;
+            border-radius: 20px;
+            padding: 6px 10px;
+            display: inline-block;
+            margin: 3px;
+        }
+        .refresh-btn {
+            background: #0f2b5e;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        .atualizado {
+            font-size: 0.7rem;
+            text-align: right;
+            margin-top: 8px;
+            color: #aaa;
+        }
+
+        .canvas-3d-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        canvas#bgCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        @media (max-width: 1000px) {
+            .main-container { flex-direction: column; align-items: center; padding-top: 90px; }
+            .card { width: 95%; max-width: 520px; }
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 20px;
+            color: #aaa;
+            position: relative;
+            z-index: 20;
+        }
+        .saque-info { font-size: 0.7rem; color: #ffaa88; margin-top: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="digital-clock" id="clockDisplay">00:00:00</div>
+        <div class="magalhaes-brand">✨ Magalhães Calculadora ✨</div>
+    </div>
+
+    <div class="main-container">
+        <!-- Calculadora Normal -->
+        <div class="card">
+            <h2>🧮 Calculadora + %</h2>
+            <div class="calc-screen" id="calcScreen">0</div>
+            <div class="calc-buttons" id="buttonsGrid"></div>
+            <div style="font-size: 0.7rem; text-align: center; margin-top: 12px;">✅ %: percentual do valor (ex: 200+10% = 220)</div>
+        </div>
+
+        <!-- Juros Compostos -->
+        <div class="card">
+            <h2>📈 Juros + Saques</h2>
+            <div class="compound-group">
+                <label>💵 Valor Inicial</label>
+                <div class="currency-row">
+                    <input type="number" id="principal" value="1000" step="any" style="width:60%">
+                    <select id="moedaOrigem">
+                        <option value="USD">💲 USD</option>
+                        <option value="AOA">🇦🇴 Kwanza</option>
+                        <option value="BRL">🇧🇷 Real</option>
+                        <option value="MZN">🇲🇿 Metical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="compound-group"><label>📈 Taxa de Juros (% ao dia)</label><input type="number" id="rate" value="0.5" step="any"></div>
+            <div class="compound-group"><label>⏱️ Número de Dias (máx 90)</label><input type="number" id="periodDays" value="30" min="1" max="90" step="1"></div>
+            <div class="compound-group">
+                <label>🏧 Configurar Saque Periódico</label>
+                <div class="withdraw-row">
+                    <select id="saqueTipo"><option value="nenhum">Sem saque</option><option value="diario">Saque Diário</option><option value="semanal">Saque Semanal (a cada 7 dias)</option></select>
+                    <input type="number" id="saqueValor" placeholder="Valor" value="10" step="any">
+                </div>
+                <div class="saque-info">💡 Saques ocorrem ANTES dos juros no dia. Semanal: dias 7,14,21...</div>
+            </div>
+            <div class="result-compound" id="compoundResult"><span>💰 Saldo Final: --</span><br><span class="juros-vermelho">📉 Juros Totais: --</span><br><span class="lucro-amarelo">📈 Lucro Líquido: --</span><br><span>🏧 Saques totais: --</span></div>
+            <button class="btn-calc" id="calcCompoundBtn">📊 Calcular & Exibir Tabela</button>
+            <div class="daily-table-wrapper" id="dailyTableWrapper" style="display: none;"><table class="daily-table"><thead><tr><th>Dia</th><th>Saldo Inicial</th><th>Juros</th><th>Saldo Final</th><th>Lucro Acum.</th><th>Saque</th></tr></thead><tbody id="dailyTableBody"></tbody></table></div>
+        </div>
+
+        <!-- CARD CÂMBIO COM CONVERSOR -->
+        <div class="card cambio-card">
+            <h2>💱 Câmbio + Conversor</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size:0.7rem;">💰 USD | EUR | USDT | BTC | SOL → AOA • MZN • BRL</span>
+                <button id="refreshCambioBtn" class="refresh-btn">🔄 Atualizar</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="cambio-table" id="cambioTable">
+                    <thead><tr><th>Moeda</th><th>🇦🇴 Kwanza (AOA)</th><th>🇲🇿 Metical (MZN)</th><th>🇧🇷 Real (BRL)</th></tr></thead>
+                    <tbody id="cambioTableBody"><tr><td colspan="4">Carregando cotações...</td></tr></tbody>
+                </table>
+            </div>
+            <!-- Linha de conversão personalizada -->
+            <div class="conversor-row" style="margin-top: 20px; background: rgba(0,20,40,0.7); border-radius: 28px; padding: 14px;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: center;">
+                    <div style="min-width: 130px;">
+                        <div class="conversor-label">💱 Valor (qualquer moeda)</div>
+                        <input type="number" id="conversorAmount" class="conversor-input" placeholder="Ex: 100" value="100" step="any">
+                    </div>
+                    <div style="min-width: 130px;">
+                        <div class="conversor-label">🌍 Moeda de origem</div>
+                        <select id="conversorFrom" class="conversor-input" style="width:100%; background:#0a0f2a;">
+                            <option value="USD">USD</option><option value="EUR">EUR</option><option value="USDT">USDT</option>
+                            <option value="BTC">BTC</option><option value="SOL">SOL</option>
+                        </select>
+                    </div>
+                    <button id="converterBtn" style="background: cyan; color:#000; padding: 10px 18px; border-radius: 40px; font-weight: bold;">🔄 Converter</button>
+                </div>
+                <div id="conversorResultado" style="margin-top: 16px; text-align: center; font-size: 0.9rem; background: #00000066; border-radius: 28px; padding: 12px;">
+                    💡 Digite um valor e clique em Converter para ver o resultado em AOA, MZN e BRL.
+                </div>
+            </div>
+            <div class="atualizado" id="cambioTimestamp">⏱️ Atualizado: --</div>
+        </div>
+    </div>
+
+    <div class="canvas-3d-wrapper"><canvas id="bgCanvas"></canvas></div>
+    <footer>✨ Magalhães | Juros + Saques | Câmbio ao vivo + Conversor interativo (USD/EUR/USDT/BTC/SOL → AOA, MZN, BRL)</footer>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.128.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        // ---------- CENA 3D ----------
+        const canvas3d = document.getElementById('bgCanvas');
+        const scene = new THREE.Scene();
+        scene.background = null;
+        scene.fog = new THREE.FogExp2(0x030617, 0.008);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 12);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+        const ambientLight = new THREE.AmbientLight(0x222222);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(2, 5, 3);
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x2266ff, 0.5);
+        backLight.position.set(-2, 1, -4);
+        scene.add(backLight);
+        const group = new THREE.Group();
+        const knotGeo = new THREE.TorusKnotGeometry(1.2, 0.28, 200, 32, 3, 4);
+        const knotMat = new THREE.MeshStandardMaterial({ color: 0x3a86ff, emissive: 0x0a2a6a, metalness: 0.7 });
+        const knot = new THREE.Mesh(knotGeo, knotMat);
+        group.add(knot);
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(0.65, 32, 32), new THREE.MeshPhongMaterial({ color: 0x00ccff, emissive: 0x004466, transparent: true, opacity: 0.35 }));
+        group.add(innerSphere);
+        const satellites = [];
+        for (let i = 0; i < 12; i++) {
+            const sat = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), new THREE.MeshStandardMaterial({ color: [0xff44aa,0x44ffaa,0xffaa44][i%3], emissive: 0x331166 }));
+            sat.userData = { angle: (i/12)*Math.PI*2, radius: 1.9, speed: 0.008 + Math.random()*0.005 };
+            group.add(sat);
+            satellites.push(sat);
+        }
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlePos = [];
+        for (let i=0;i<800;i++) {
+            const theta = Math.random()*Math.PI*2;
+            const phi = Math.acos(2*Math.random()-1);
+            const r = 2.2+Math.random()*1.2;
+            particlePos.push(r*Math.sin(phi)*Math.cos(theta), r*Math.sin(phi)*Math.sin(theta)*0.8, r*Math.cos(phi));
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particlePos), 3));
+        const particles = new THREE.Points(particlesGeo, new THREE.PointsMaterial({ color: 0x66ccff, size: 0.045, blending: THREE.AdditiveBlending }));
+        group.add(particles);
+        const ringGeo = new THREE.TorusGeometry(1.5, 0.03, 64, 200);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0x0ff, emissive: 0x0a8cff });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI/2;
+        group.add(ring);
+        scene.add(group);
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0;i<1200;i++) { starPos.push((Math.random()-0.5)*200, (Math.random()-0.5)*100, (Math.random()-0.5)*80-40); }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.6 }));
+        scene.add(stars);
+        let time3d = 0;
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            time3d += 0.012;
+            group.rotation.y = time3d * 0.3;
+            group.rotation.x = Math.sin(time3d*0.2)*0.2;
+            satellites.forEach(sat => {
+                if(sat.userData) {
+                    sat.userData.angle += sat.userData.speed;
+                    const x = Math.cos(sat.userData.angle)*sat.userData.radius;
+                    const z = Math.sin(sat.userData.angle)*sat.userData.radius;
+                    sat.position.set(x, Math.sin(sat.userData.angle*2.5)*0.45, z);
+                    sat.rotation.x += 0.03;
+                }
+            });
+            particles.rotation.y += 0.002;
+            ring.material.emissiveIntensity = 0.4+Math.sin(time3d*3)*0.2;
+            knot.material.emissiveIntensity = 0.25+Math.sin(time3d*2)*0.1;
+            stars.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate3D();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        
+        // RELÓGIO
+        function updateClock() { document.getElementById('clockDisplay').innerText = new Date().toLocaleTimeString('pt-BR'); }
+        updateClock(); setInterval(updateClock, 1000);
+        
+        // CALCULADORA NORMAL
+        const buttonsDef = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+','C','←','%'];
+        const buttonsContainer = document.getElementById('buttonsGrid');
+        let currentInput = '0', previousInput = '', operation = null, resetScreen = false;
+        const calcScreenDiv = document.getElementById('calcScreen');
+        function updateScreen(v) { calcScreenDiv.innerText = v.length > 16 ? parseFloat(v).toExponential(12) : v; }
+        function handleNumber(num) { if(resetScreen) { currentInput = num; resetScreen = false; } else { if(currentInput === '0' && num !== '.') currentInput = num; else currentInput += num; } updateScreen(currentInput); }
+        function handleOperator(op) { if(operation !== null && !resetScreen) calculate(); previousInput = currentInput; operation = op; resetScreen = true; }
+        function calculate() { if(operation === null || resetScreen) return; let prev=parseFloat(previousInput), curr=parseFloat(currentInput); if(isNaN(prev)||isNaN(curr)) return; let r; switch(operation){ case '+': r=prev+curr; break; case '-': r=prev-curr; break; case '*': r=prev*curr; break; case '/': r=curr===0?'Erro':prev/curr; break; default:return; } if(r==='Erro'){ currentInput='Erro'; updateScreen('Erro'); operation=null; resetScreen=true; return; } currentInput=r.toString(); updateScreen(currentInput); operation=null; previousInput=''; resetScreen=true; }
+        function percentOperation() { if(operation === null || resetScreen){ let v=parseFloat(currentInput); if(!isNaN(v)){ currentInput=(v/100).toString(); updateScreen(currentInput); resetScreen=false; } return; } let base=parseFloat(previousInput), perc=parseFloat(currentInput); if(isNaN(base)||isNaN(perc)) return; let r; switch(operation){ case '+': r=base+(base*perc/100); break; case '-': r=base-(base*perc/100); break; case '*': r=base*(perc/100); break; case '/': r=perc!==0?base/(perc/100):'Erro'; break; default:return; } if(r==='Erro'){ currentInput='Erro'; updateScreen('Erro'); operation=null; resetScreen=true; return; } currentInput=r.toString(); updateScreen(currentInput); operation=null; previousInput=''; resetScreen=true; }
+        function clearAll() { currentInput='0'; previousInput=''; operation=null; resetScreen=false; updateScreen('0'); }
+        function backspace() { if(resetScreen){ clearAll(); return; } if(currentInput.length===1||currentInput==='0') currentInput='0'; else currentInput=currentInput.slice(0,-1); if(currentInput==='') currentInput='0'; updateScreen(currentInput); }
+        function handleDecimal() { if(resetScreen){ currentInput='0.'; resetScreen=false; updateScreen(currentInput); return; } if(!currentInput.includes('.')) currentInput+='.'; updateScreen(currentInput); }
+        buttonsDef.forEach(btn => { const el = document.createElement('button'); el.innerText = btn; if(btn==='=') el.classList.add('equal'); else if(btn==='C') el.classList.add('clear'); else if(btn==='%') el.classList.add('percent-btn'); else if(['+','-','*','/'].includes(btn)) el.classList.add('operator'); el.addEventListener('click', () => { if(!isNaN(btn)||btn==='.'){ if(btn==='.') handleDecimal(); else handleNumber(btn); } else if(btn==='=') calculate(); else if(btn==='C') clearAll(); else if(btn==='←') backspace(); else if(btn==='%') percentOperation(); else handleOperator(btn); }); buttonsContainer.appendChild(el); }); updateScreen('0');
+        
+        // JUROS COMPOSTOS
+        const principalInput=document.getElementById('principal'), rateInput=document.getElementById('rate'), periodDaysInput=document.getElementById('periodDays'), moedaSelect=document.getElementById('moedaOrigem'), saqueTipoSelect=document.getElementById('saqueTipo'), saqueValorInput=document.getElementById('saqueValor'), compoundResultDiv=document.getElementById('compoundResult'), calcCompoundBtn=document.getElementById('calcCompoundBtn'), dailyTableWrapper=document.getElementById('dailyTableWrapper'), dailyTableBody=document.getElementById('dailyTableBody');
+        const moedaSimbolo = { USD:{simbolo:'$'}, AOA:{simbolo:'Kz'}, BRL:{simbolo:'R$'}, MZN:{simbolo:'MT'} };
+        function formatMoney(v,k) { return `${moedaSimbolo[k].simbolo} ${v.toFixed(2)}`; }
+        function calcularComSaques(){ let P=parseFloat(principalInput.value), taxa=parseFloat(rateInput.value), dias=parseInt(periodDaysInput.value,10), moeda=moedaSelect.value, saqueTipo=saqueTipoSelect.value, saqueValor=parseFloat(saqueValorInput.value); if(isNaN(P)) P=0; if(isNaN(taxa)) taxa=0; if(isNaN(dias)||dias<1) dias=1; if(dias>90) dias=90; if(isNaN(saqueValor)) saqueValor=0; let taxaDia=taxa/100, saldo=P, totalSaques=0, totalJuros=0, ev=[]; for(let d=1;d<=dias;d++){ let ini=saldo, saqueDia=0; let temSaque=(saqueTipo==='diario'&&saqueValor>0)||(saqueTipo==='semanal'&&saqueValor>0&&d%7===0); if(temSaque&&saldo>0){ if(saldo>=saqueValor){ saqueDia=saqueValor; saldo-=saqueDia; totalSaques+=saqueDia; }else{ saqueDia=saldo; totalSaques+=saqueDia; saldo=0; } } let juros=saldo*taxaDia; saldo+=juros; totalJuros+=juros; let lucroAcum=(saldo+totalSaques)-P; ev.push({dia:d, ini, juros, saque:saqueDia, final:saldo, lucroAcum, isSaque:temSaque&&saqueDia>0}); } let finalSaldo=ev.length?ev[ev.length-1].final:0, lucroLiq=(finalSaldo+totalSaques)-P; compoundResultDiv.innerHTML=`<span>💰 Saldo Final: ${formatMoney(finalSaldo,moeda)}</span><br><span class="juros-vermelho">📉 Juros Totais: ${formatMoney(totalJuros,moeda)}</span><br><span class="lucro-amarelo">📈 Lucro Líquido: ${formatMoney(lucroLiq,moeda)}</span><br><span>🏧 Saques totais: ${formatMoney(totalSaques,moeda)}</span>`; if(ev.length){ dailyTableWrapper.style.display='block'; dailyTableBody.innerHTML=ev.map(d=>`<tr class="${d.isSaque&&saqueTipo==='semanal'?'semanal-destaque':''}"><td>${d.dia}</td><td>${formatMoney(d.ini,moeda)}</td><td class="juros-vermelho">${formatMoney(d.juros,moeda)}</td><td>${formatMoney(d.final,moeda)}</td><td class="lucro-amarelo">${formatMoney(d.lucroAcum,moeda)}</td><td class="saque-cell">${d.saque>0?formatMoney(d.saque,moeda):'-'}</td></tr>`).join(''); }else dailyTableWrapper.style.display='none'; }
+        calcCompoundBtn.addEventListener('click', calcularComSaques); [saqueTipoSelect, saqueValorInput, periodDaysInput, moedaSelect, principalInput, rateInput].forEach(el=>el.addEventListener('input', calcularComSaques)); calcularComSaques();
+        
+        // ---------- CÂMBIO + CONVERSOR DINÂMICO ----------
+        const cambioTableBody = document.getElementById('cambioTableBody');
+        const cambioTimestampSpan = document.getElementById('cambioTimestamp');
+        const refreshBtn = document.getElementById('refreshCambioBtn');
+        const conversorAmount = document.getElementById('conversorAmount');
+        const conversorFrom = document.getElementById('conversorFrom');
+        const converterBtn = document.getElementById('converterBtn');
+        const conversorResultado = document.getElementById('conversorResultado');
+        
+        let latestRates = { USD: { AOA: 912.5, MZN: 64.2, BRL: 5.05 }, EUR: { AOA: 985, MZN: 69.5, BRL: 5.45 }, USDT: { AOA: 912.5, MZN: 64.2, BRL: 5.05 }, BTC: { AOA: 57500000, MZN: 4040000, BRL: 318000 }, SOL: { AOA: 132000, MZN: 9300, BRL: 732 } }; // fallback
+        
+        async function fetchCambioReal() {
+            try {
+                const resBase = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=AOA,MZN,BRL');
+                const dataBase = await resBase.json();
+                const rates = dataBase.rates;
+                const usdToAOA = rates.AOA || 912.5;
+                const usdToMZN = rates.MZN || 64.2;
+                const usdToBRL = rates.BRL || 5.05;
+                const resEur = await fetch('https://api.exchangerate.host/latest?base=EUR&symbols=AOA,MZN,BRL');
+                const dataEur = await resEur.json();
+                const eurRates = dataEur.rates;
+                const eurToAOA = eurRates.AOA || (usdToAOA * 1.08);
+                const eurToMZN = eurRates.MZN || (usdToMZN * 1.08);
+                const eurToBRL = eurRates.BRL || (usdToBRL * 1.08);
+                const cryptoRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana&vs_currencies=usd');
+                const cryptoData = await cryptoRes.json();
+                const btcUsd = cryptoData.bitcoin?.usd || 63000;
+                const solUsd = cryptoData.solana?.usd || 145;
+                const btcToAOA = btcUsd * usdToAOA, btcToMZN = btcUsd * usdToMZN, btcToBRL = btcUsd * usdToBRL;
+                const solToAOA = solUsd * usdToAOA, solToMZN = solUsd * usdToMZN, solToBRL = solUsd * usdToBRL;
+                latestRates = {
+                    USD: { AOA: usdToAOA, MZN: usdToMZN, BRL: usdToBRL },
+                    EUR: { AOA: eurToAOA, MZN: eurToMZN, BRL: eurToBRL },
+                    USDT: { AOA: usdToAOA, MZN: usdToMZN, BRL: usdToBRL },
+                    BTC: { AOA: btcToAOA, MZN: btcToMZN, BRL: btcToBRL },
+                    SOL: { AOA: solToAOA, MZN: solToMZN, BRL: solToBRL }
+                };
+                return true;
+            } catch(e) { console.warn("Erro API, usando fallback", e); return false; }
+        }
+        
+        async function renderCambioTable() {
+            await fetchCambioReal();
+            const moedasLista = [
+                { nome: "💵 Dólar (USD)", key: "USD" }, { nome: "💶 Euro (EUR)", key: "EUR" }, { nome: "₮ USDT", key: "USDT" },
+                { nome: "₿ Bitcoin (BTC)", key: "BTC" }, { nome: "◎ Solana (SOL)", key: "SOL" }
+            ];
+            const rows = moedasLista.map(m => `
+                <tr>
+                    <td class="moeda-nome">${m.nome}</td>
+                    <td>${latestRates[m.key].AOA.toFixed(2)} Kz</td>
+                    <td>${latestRates[m.key].MZN.toFixed(2)} MT</td>
+                    <td>${latestRates[m.key].BRL.toFixed(2)} R$</td>
+                </tr>
+            `).join('');
+            cambioTableBody.innerHTML = rows;
+            cambioTimestampSpan.innerText = `⏱️ Atualizado: ${new Date().toLocaleString('pt-BR')}`;
+            // atualiza conversão automática (se existir valor)
+            realizarConversao();
+        }
+        
+        function realizarConversao() {
+            let amount = parseFloat(conversorAmount.value);
+            if (isNaN(amount) || amount === 0) {
+                conversorResultado.innerHTML = `⚠️ Digite um valor válido para conversão.`;
+                return;
+            }
+            const fromCurrency = conversorFrom.value;
+            const rates = latestRates[fromCurrency];
+            if (!rates) { conversorResultado.innerHTML = `❌ Moeda não disponível`; return; }
+            const convertedAOA = amount * rates.AOA;
+            const convertedMZN = amount * rates.MZN;
+            const convertedBRL = amount * rates.BRL;
+            conversorResultado.innerHTML = `
+                <span class="resultado-conversao">💰 ${amount.toFixed(4)} ${fromCurrency} =</span><br>
+                <span class="resultado-conversao">🇦🇴 ${convertedAOA.toFixed(2)} Kwanza (AOA)</span>
+                <span class="resultado-conversao">🇲🇿 ${convertedMZN.toFixed(2)} Metical (MZN)</span>
+                <span class="resultado-conversao">🇧🇷 ${convertedBRL.toFixed(2)} Real (BRL)</span>
+            `;
+        }
+        
+        refreshBtn.addEventListener('click', () => { renderCambioTable(); });
+        converterBtn.addEventListener('click', realizarConversao);
+        conversorAmount.addEventListener('input', realizarConversao);
+        conversorFrom.addEventListener('change', realizarConversao);
+        renderCambioTable();
+        setInterval(renderCambioTable, 120000);
+    </script>
+</body>
+</html>     }
         .daily-table {
             width: 100%;
             border-collapse: collapse;
